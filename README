@@ -1,6 +1,6 @@
 Windsor
 
-Windsor is basically a super-controller from which you can inherit in order to easily get some nice defaults for a RESTful API that allows you to do basic CRUD for a given ActiveModel.
+Windsor is basically a super-controller for Ruby on Rails from which you can inherit in order to easily get some nice default actions for a RESTful API that allows you to do basic CRUD for a given ActiveModel.
 
 Example:
 
