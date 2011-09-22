@@ -26,17 +26,17 @@ PUT /api/user/{id} will allow you to delete that user with the matching id
 
 Here's how a GET to /api/users/1 would look:
 
-{"username":"grizzle","email_address":"asdf@asdf.com","self":"http://localhost/api/users/1","index":"http://localhost/api/users"},
+{"username":"grizzle","email_address":"grizzle@example.com","self":"http://example.com/api/users/1","index":"http://example.com/api/users"},
 
 Here's how a GET to /api/users/ (the collection) would look:
 
 {
  "users":[
-  {"username":"grizzle","email_address":"asdf@asdf.com","self":"http://localhost/api/users/1","index":"http://localhost/api/users"},
-  {"username":"gdizzle","email_address":"gdizzle@gmail.com","self":"http://localhost/api/users/2","index":"http://localhost/api/users"},
-  {"username":"samdec","email_address":"samdec@gmail.com","self":"http://localhost/api/users/3","index":"http://localhost/api/users"}
+  {"username":"asdf","email_address":"asdf@example.com","self":"http://example.com/api/users/1","index":"http://example.com/api/users"},
+  {"username":"gdizzle","email_address":"gdizzle@example.com","self":"http://example.com/api/users/2","index":"http://example.com/api/users"},
+  {"username":"samdec","email_address":"samdec@example.com","self":"http://example.com/api/users/3","index":"http://example.com/api/users"}
  ],
- "self":"http://flashity.com/api/users"
+ "self":"http://example.com/api/users"
 }
 
 

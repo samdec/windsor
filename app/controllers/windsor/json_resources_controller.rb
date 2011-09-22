@@ -7,14 +7,9 @@ class JsonResourcesController < ApplicationController
 
   attr_accessor :exceptional_attributes
   attr_accessor :attributes_all_or_none
-  attr_accessor :max_page_size
-  
-  def initialize
-    @max_page_size = 100
-    super
-  end
-  
+    
   def index
+    @max_page_size = 100 unless @max_page_size
     if params[:page].nil?
       current_page_index = 0
       offset = 0
@@ -22,7 +17,7 @@ class JsonResourcesController < ApplicationController
       current_page_index = params[:page].to_i - 1
       offset = @max_page_size * current_page_index  
     end
-    items = model_class.where(scope).limit(max_page_size).offset(offset).all
+    items = model_class.where(scope).limit(@max_page_size).offset(offset).all
     total_items = model_class.count
 
     object = { 
@@ -167,20 +162,28 @@ class JsonResourcesController < ApplicationController
       total_pages = (total_items.to_f / @max_page_size).ceil
       total_pages = 1 if total_pages == 0 # Collections with no items in them still have 1 page.
       last_page_index = total_pages - 1
+      query_parameters = request.query_parameters
       pagination = {
         :total_items => total_items, 
-        :max_page_size => max_page_size,
-        :first => 'http://test.host/testers?page=1',
-        :last => 'http://test.host/testers?page=' + total_pages.to_s
+        :max_page_size => @max_page_size,
+        :first => page_link(1),
+        :last => page_link(total_pages.to_s)
       }
       unless current_page_index == last_page_index
-        pagination[:next] = 'http://test.host/testers?page=' + (current_page_index + 2).to_s
+        pagination[:next] = page_link((current_page_index + 2))
       end
       if current_page_index >= 1
-        pagination[:previous] = 'http://test.host/testers?page=' + current_page_index.to_s
+        pagination[:previous] = page_link(current_page_index)
       end      
       return pagination
-    end  
+    end
+    
+    def page_link(page_number)
+      query_parameters = request.query_parameters
+      base_url = request.base_url + request.path
+      query_parameters[:page] = page_number
+      return base_url + "?" + query_parameters.to_query
+    end        
   
     # Removes extra attributes passed in. Extra attributes is defined as attributes not sent in a GET.
     def prune_extra_attributes(request_body, existing_attributes)    

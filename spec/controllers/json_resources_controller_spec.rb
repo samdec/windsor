@@ -104,6 +104,7 @@ describe TesterController do
             
       it "returns an empty list" do
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        request.stub!(:path).and_return('/testers')
         Tester.stub_chain(:where, :limit, :offset, :all).and_return([])
         Tester.should_receive(:count).and_return(0)
         get :index, :format => :json
@@ -140,6 +141,7 @@ describe TesterController do
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        request.stub!(:path).and_return('/testers')
         tester1 = mock_model(Tester)
         tester2 = mock_model(Tester)
         tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
@@ -151,15 +153,13 @@ describe TesterController do
       end
     end        
 
-    #TODO config : use_pagination, show_total_items_count.  should show previous links if applicable
-
      context "When three testers exist and page size is set to 2" do
        
       controller(TesterController) do
-          def initialize
-            super
-            self.max_page_size = 2
-          end  
+        def index
+          @max_page_size = 2
+          super
+        end
       end 
        
       it "returns a list with two testers and a paging object" do
@@ -180,6 +180,7 @@ describe TesterController do
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        request.stub!(:path).and_return('/testers')
         tester1 = mock_model(Tester)
         tester2 = mock_model(Tester)
         tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
@@ -207,11 +208,12 @@ describe TesterController do
                      }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "3"}).and_return('http://test.host/testers/3')
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+          request.stub!(:path).and_return('/testers')
           Tester.should_receive(:count).and_return(3)
           tester3 = mock_model(Tester)
           tester3.should_receive(:attributes).and_return({ "name" => "Tester 3", "id" => 3})
           Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester3])
-          get :index, :format => :json, :page => '2'
+          get :index, :format => :json, :page => 2
           response_should_be(expected, 200)
         end        
       end  
