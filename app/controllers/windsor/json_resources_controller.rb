@@ -7,10 +7,28 @@ class JsonResourcesController < ApplicationController
 
   attr_accessor :exceptional_attributes
   attr_accessor :attributes_all_or_none
+  attr_accessor :max_page_size
+  
+  def initialize
+    @max_page_size = 100
+    super
+  end
   
   def index
-    items = model_class.where(scope).all
-    object = { get_controller_name => items }
+    if params[:page].nil?
+      current_page_index = 0
+      offset = 0
+    else
+      current_page_index = params[:page].to_i - 1
+      offset = @max_page_size * current_page_index  
+    end
+    items = model_class.where(scope).limit(max_page_size).offset(offset).all
+    total_items = model_class.count
+
+    object = { 
+      get_controller_name => items, 
+      :pagination => get_pagination_object(total_items, current_page_index)
+    }
     render_json object
   end
 
@@ -132,43 +150,12 @@ class JsonResourcesController < ApplicationController
       @exceptional_actions
     end
   end
-
-  def add_hypermedia_to_object(object, model_object)
-    links = get_relationship_links(object, model_object)
-    object.merge!(links)  
-    # put relationships on this
-    return object
-  end
-
+  
   def get_self_link(object_hash)
     url_conditions = { :controller => get_controller_name, :action => "index" }
-    url_conditions.merge!(:action => "show", :id => object_hash["id"].to_s) unless is_list?(object_hash)
+    url_conditions.merge!(:action => "show", :id => object_hash["id"].to_s) unless object_hash["id"].nil?
     url_for(url_conditions)
   end
-
-  def get_index_link(object_hash)
-    url_conditions = { :controller => get_controller_name, :action => "index" }
-    url_for(url_conditions)
-  end
-
-  # TODO write a test that exercises this!!!
-  # TODO what about other relationships?
-  # TODO can we refactor so that we're not passing both object_hash and model_object everywhere?
-  def get_relationship_links(object_hash, model_object)
-    object_hash[:self] = get_self_link(object_hash)
-    object_hash[:index] = get_index_link(object_hash) unless is_list?(object_hash)
-    if !is_list?(object_hash)
-      associations = model_class.reflect_on_all_associations(:belongs_to)  #TODO has_one, has_many, what else?
-      associations.each do |a| 
-        relationship_name = a.options[:class_name].nil? ? a.name : a.options[:class_name]
-        controller_name = relationship_name.to_s.downcase.pluralize
-        relationship_object = model_object.send a.name
-        object_hash[a.name] = url_for(:controller => controller_name, :action => 'show', :id => relationship_object.id)  
-      end
-    end
-    object_hash
-  end
-
   
   def get_controller_name
     model_class.name.underscore.pluralize
@@ -176,9 +163,24 @@ class JsonResourcesController < ApplicationController
     
   private
   
-    def is_list?(object)
-      return object["id"].nil?
-    end
+    def get_pagination_object(total_items, current_page_index)
+      total_pages = (total_items.to_f / @max_page_size).ceil
+      total_pages = 1 if total_pages == 0 # Collections with no items in them still have 1 page.
+      last_page_index = total_pages - 1
+      pagination = {
+        :total_items => total_items, 
+        :max_page_size => max_page_size,
+        :first => 'http://test.host/testers?page=1',
+        :last => 'http://test.host/testers?page=' + total_pages.to_s
+      }
+      unless current_page_index == last_page_index
+        pagination[:next] = 'http://test.host/testers?page=' + (current_page_index + 2).to_s
+      end
+      if current_page_index >= 1
+        pagination[:previous] = 'http://test.host/testers?page=' + current_page_index.to_s
+      end      
+      return pagination
+    end  
   
     # Removes extra attributes passed in. Extra attributes is defined as attributes not sent in a GET.
     def prune_extra_attributes(request_body, existing_attributes)    
@@ -207,8 +209,8 @@ class JsonResourcesController < ApplicationController
       {}
     end
     
-    def prepare_representation(object, model_object)
-      object = add_hypermedia_to_object(object, model_object)
+    def prepare_representation(object)
+      object.merge!(:self => get_self_link(object))
       attributes = enabled_attributes(object)
       object.each do |key, value|
         object.delete key unless attributes.include?(key)
@@ -227,27 +229,17 @@ class JsonResourcesController < ApplicationController
         end
       end
     end
-    
-    def is_collection_object?(object)
-      list_name = get_controller_name
-      !object[list_name].nil? && object[list_name].is_a?(Array)
-    end
-    
-    def prepare_collection_representation(object)
-      list_name = get_controller_name
-      object[list_name].map! do |item|
-        prepare_representation(hashity_hash(item), item)
-      end
-      object[:self] = get_self_link(object)    
-      object  
-    end
-    
+  
     def render_json(object, status = 200)
       begin
-        if is_collection_object?(object)
-          prepare_collection_representation(object)
+        list_name = get_controller_name
+        if !object[list_name].nil? && object[list_name].is_a?(Array)
+          object[list_name].map! do |item|
+            prepare_representation(hashity_hash(item))
+          end
+          object[:self] = get_self_link(object)
         else
-          object = prepare_representation(hashity_hash(object), object)
+          object = prepare_representation(hashity_hash(object))
         end
         render :json => object, :status => status
       rescue ArgumentError

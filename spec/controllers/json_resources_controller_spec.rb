@@ -19,7 +19,7 @@ describe TesterController do
   end
   
   before(:each) do
-    Kernel.should_receive(:const_get).at_most(25).times.and_return(Tester)
+    Kernel.stub!(:const_get).and_return(Tester)
   end        
   
   describe "#create" do
@@ -31,7 +31,6 @@ describe TesterController do
           input = { "name" => "Test Account", "id" => 1 }
           expected = { "name" => "Test Account","id" => 1 }
           @controller.should_receive(:url_for).twice.with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers/')
           
           mock_check_object_model
           
@@ -49,12 +48,12 @@ describe TesterController do
       context "and valid attributes with extra attributes are given" do
         it "returns 201 with the matching representation in json, the extra attributes are ignored" do
           input = { "name" => "New Name", "id" => 1, "this_is_an_attribute_that_doesn't_exiti_on_the_model" => 42 }
-          expected = {"name" => "New Name", "id" => 1, "self" => "http://test.host/testers/1", "index" => "http://test.host/testers/"}
+          expected = {"name" => "New Name", "id" => 1, "self" => "http://test.host/testers/1"}
 
           mock_check_object_model
           
           @controller.should_receive(:url_for).twice.with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers/')         
+          
           object_to_be_created = mock_model(Tester)
           Tester.should_receive(:new).with( { "name" => "New Name", "id" => 1}).and_return(object_to_be_created)
           object_to_be_created.should_receive(:save).and_return(true)
@@ -104,34 +103,119 @@ describe TesterController do
     context "When a tester does not exist" do
             
       it "returns an empty list" do
-        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers/')
-        Tester.stub_chain(:where, :all).and_return([])
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        Tester.stub_chain(:where, :limit, :offset, :all).and_return([])
+        Tester.should_receive(:count).and_return(0)
         get :index, :format => :json
-        response_should_be({ :testers => [], :self => 'http://test.host/testers/' }, 200)
+        expected = {
+          :testers => [], 
+          :pagination => {
+            :total_items => 0, 
+            :max_page_size => 100,
+            :first => 'http://test.host/testers?page=1',
+            :last => 'http://test.host/testers?page=1'
+          },  
+          :self => 'http://test.host/testers'
+        }
+        response_should_be(expected, 200)
       end
     end
     
-    context "When two testers exist" do
-     it "returns a list with two testers" do
-       expected = { 
-                    :testers => [ 
-                                   { :name => "Tester 1", :id => 1, :self => 'http://test.host/testers/1', :index => 'http://test.host/testers/' }, 
-                                   { :name => "Tester 2", :id => 2, :self => 'http://test.host/testers/2', :index => 'http://test.host/testers/' }  
-                                 ], 
-                    :self => 'http://test.host/testers/'
-                  }
-       @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-       @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
-       @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).exactly(3).times.and_return('http://test.host/testers/')
-       tester1 = mock_model(Tester)
-       tester2 = mock_model(Tester)
-       tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
-       tester2.should_receive(:attributes).and_return({ "name" => "Tester 2", "id" => 2})
-       Tester.stub_chain(:where, :all).and_return([tester1, tester2])
-       get :index, :format => :json
-       response_should_be(expected, 200)
-     end
-   end        
+  
+     context "When two testers exist" do
+      it "returns a list with two accounts and a paging object" do
+        expected = { 
+                     :testers => [ 
+                                    { :name => "Tester 1", :id => 1, :self => 'http://test.host/testers/1' }, 
+                                    { :name => "Tester 2", :id => 2, :self => 'http://test.host/testers/2' }  
+                                  ], 
+                     :pagination => {
+                       :total_items => 2, 
+                       :max_page_size => 100,
+                       :first => 'http://test.host/testers?page=1',
+                       :last => 'http://test.host/testers?page=1'
+                     },
+                     :self => 'http://test.host/testers',
+                   }
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        tester1 = mock_model(Tester)
+        tester2 = mock_model(Tester)
+        tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
+        tester2.should_receive(:attributes).and_return({ "name" => "Tester 2", "id" => 2})
+        Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester1, tester2])
+        Tester.should_receive(:count).and_return(2)
+        get :index, :format => :json
+        response_should_be(expected, 200)
+      end
+    end        
+
+    #TODO config : use_pagination, show_total_items_count.  should show previous links if applicable
+
+     context "When three testers exist and page size is set to 2" do
+       
+      controller(TesterController) do
+          def initialize
+            super
+            self.max_page_size = 2
+          end  
+      end 
+       
+      it "returns a list with two testers and a paging object" do
+        expected = { 
+                     :testers => [ 
+                                    { :name => "Tester 1", :id => 1, :self => 'http://test.host/testers/1' }, 
+                                    { :name => "Tester 2", :id => 2, :self => 'http://test.host/testers/2' }, 
+                                  ], 
+                     :pagination => {
+                       :total_items => 3, 
+                       :max_page_size => 2,
+                       :first => 'http://test.host/testers?page=1',
+                       :last => 'http://test.host/testers?page=2',
+                       :next => 'http://test.host/testers?page=2'
+                     },
+                     :self => 'http://test.host/testers',
+                   }
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
+        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        tester1 = mock_model(Tester)
+        tester2 = mock_model(Tester)
+        tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
+        tester2.should_receive(:attributes).and_return({ "name" => "Tester 2", "id" => 2})
+        Tester.should_receive(:count).and_return(3)
+        Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester1, tester2])
+        get :index, :format => :json
+        response_should_be(expected, 200)
+      end
+      
+      context "page is set to 2" do
+        it "returns a 1 item list and a paging object" do
+          expected = { 
+                       :testers => [ 
+                                      { :name => "Tester 3", :id => 3, :self => 'http://test.host/testers/3' } 
+                                    ], 
+                       :pagination => {
+                         :total_items => 3, 
+                         :max_page_size => 2,
+                         :first => 'http://test.host/testers?page=1',
+                         :last => 'http://test.host/testers?page=2',
+                         :previous => 'http://test.host/testers?page=1'
+                       },
+                       :self => 'http://test.host/testers',
+                     }
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "3"}).and_return('http://test.host/testers/3')
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+          Tester.should_receive(:count).and_return(3)
+          tester3 = mock_model(Tester)
+          tester3.should_receive(:attributes).and_return({ "name" => "Tester 3", "id" => 3})
+          Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester3])
+          get :index, :format => :json, :page => '2'
+          response_should_be(expected, 200)
+        end        
+      end  
+    end        
   end
   
   describe "#show" do
@@ -147,7 +231,6 @@ describe TesterController do
       it "returns proper json when tester with that id exists" do
         expected = { :name => "Tester 1", "id" => 1 }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers/')
         tester = mock_model(Tester)
         tester.should_receive(:attributes).and_return(expected)
         tester.should_receive(:testers).and_return(nil)
@@ -177,12 +260,10 @@ describe TesterController do
           tester.should_receive(:attributes).twice.and_return(attributes)
           tester.should_receive(:testers).and_return(nil)
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers/')
-          
           Tester.stub_chain(:where, :find).and_return(tester)
           tester.should_receive(:update_attributes).with(attributes).and_return(true)
           put_json(:update, 1, attributes)
-          response_should_be(attributes.merge!(:self => "http://test.host/testers/1", :index => "http://test.host/testers/"), 200)
+          response_should_be(attributes.merge!(:self => "http://test.host/testers/1"), 200)
         end
       end
       
@@ -193,12 +274,10 @@ describe TesterController do
           tester.should_receive(:attributes).twice.and_return({ "name" => "New Name", "id" => 1})
           tester.should_receive(:testers).and_return(nil)
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers/')
-          
           Tester.stub_chain(:where, :find).and_return(tester)
           tester.should_receive(:update_attributes).with({"name" => "New Name", "id" => 1}).and_return(true)
           put_json(:update, 1, attributes)
-          response_should_be({"name" => "New Name", "id" => 1, "self" => "http://test.host/testers/1", "index" => "http://test.host/testers/"}, 200)
+          response_should_be({"name" => "New Name", "id" => 1, "self" => "http://test.host/testers/1"}, 200)
 	      end
       end
       
@@ -277,13 +356,12 @@ describe TesterController do
         it "returns the representation with all attributes except that one" do
           expected = { "id" => 1 }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/tester/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/tester/')
           tester = mock_model(Tester)
           tester.should_receive(:attributes).and_return(expected.merge("name" => "Tester 1"))
           tester.should_receive(:testers).and_return(nil)
           Tester.stub_chain(:where, :find).and_return(tester)
           get :show, :id => 1, :format => :json
-          response_should_be(expected.merge("self" => 'http://test.host/tester/1', "index" => 'http://test.host/tester/'), 200)
+          response_should_be(expected.merge("self" => 'http://test.host/tester/1'), 200)
         end    
       end
     
@@ -297,7 +375,6 @@ describe TesterController do
         it "returns the representation with none of the attributes except that one" do
           expected = { "name" => "Tester 1" }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/tester/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/tester/')
           tester = mock_model(Tester)
           tester.should_receive(:attributes).and_return({ "id" => 1 }.merge(expected))
           tester.should_receive(:testers).and_return(nil)
@@ -309,71 +386,48 @@ describe TesterController do
     end
   end # describe "Controller with attribute exceptions"
   
-    describe "Controller Action Enablement and Disablement" do
-
-      context "and all actions are enabled except one" do
-        controller(TesterController) do
-          def set_actions
-            actions :all, :except => [:destroy]
-          end
+  describe "Controller Action Enablement and Disablement" do
+    
+    context "and all actions are enabled except one" do
+      controller(TesterController) do
+        def set_actions
+          actions :all, :except => [:destroy]
         end
-        context "when a resource exists" do
-          it "returns 405 for the disabled action" do
-            tester = mock_model(Tester)
-            Tester.stub_chain(:where, :find).and_return(tester)
-            delete :destroy, :id => 1
-            error_response_should_be(405, "MethodNotImplemented", "Method not implemented.", "DELETE")
-          end
+      end
+      context "when a resource exists" do
+        it "returns 405 for the disabled action" do
+          tester = mock_model(Tester)
+          Tester.stub_chain(:where, :find).and_return(tester)
+          delete :destroy, :id => 1
+          error_response_should_be(405, "MethodNotImplemented", "Method not implemented.", "DELETE")
         end
-
-        context "when a resource doesn't exist" do
-          it "returns a 404" do
-            Tester.stub_chain(:where, :find).and_raise(ActiveRecord::RecordNotFound)
-            delete :destroy, :id => 1
-            error_response_should_be(404, "ResourceNotFound", "Resource not found.")
-          end
+      end
+      
+      context "when a resource doesn't exist" do
+        it "returns a 404" do
+          Tester.stub_chain(:where, :find).and_raise(ActiveRecord::RecordNotFound)
+          delete :destroy, :id => 1
+          error_response_should_be(404, "ResourceNotFound", "Resource not found.")
         end
-      end # context "and all actions are enabled except one"
-
-      context "When none of the actions are enabled except one" do
-        controller(TesterController) do
-          def set_actions
-            actions :none, :except => [:create]
-          end
+      end
+    end # context "and all actions are enabled except one"
+    
+    context "When none of the actions are enabled except one" do
+      controller(TesterController) do
+        def set_actions
+          actions :none, :except => [:create]
         end
-        context "when a resource exists" do
-          it "returns 405 for all disabled actions" do
-            tester = mock_model(Tester)
-            Tester.stub_chain(:where, :find).and_return(tester)
-            get :show, :id => 1
-            error_response_should_be(405, "MethodNotImplemented", "Method not implemented.", "GET")
-          end
-        end 
-      end # context "When none of the actions are enabled except one"
-    end # describe "Controller Action Enablement and Disablement"    
-  end
+      end
+      context "when a resource exists" do
+        it "returns 405 for all disabled actions" do
+          tester = mock_model(Tester)
+          Tester.stub_chain(:where, :find).and_return(tester)
+          get :show, :id => 1
+          error_response_should_be(405, "MethodNotImplemented", "Method not implemented.", "GET")
+        end
+      end 
+    end # context "When none of the actions are enabled except one"
+  end # describe "Controller Action Enablement and Disablement"    
+end
 
 
-
-  # class ModelOne < ActiveModel
-  #   belongs_to :model_two
-  # end
-  # 
-  # class ModelTwo < ActiveModel
-  #   has_one :model_one
-  # end
-  # 
-  # 
-  #   describe "hypermedia test or something" do
-  #     controller(TesterController) do
-  #     end
-  # 
-  #     it "tell us something" do
-  #       get :show, :id => 1
-  #       response.body should_be ''
-  #     end      
-  #     
-  #   end
-
-
-  #end
