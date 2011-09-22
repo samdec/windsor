@@ -12,9 +12,9 @@ If you have a 'User' model, you can expose it as a RESTful resource by creating 
 The controller extracts the model name from the controller name, and you can route to it like you normally would:
 
     HelloREST::Application.routes.draw do
-      namespace :json_resources, :path => '/api' do
-        resources :users
-      end
+      namespace :json_resources, :path => '/api' do
+        resources :users
+      end
     end
 
 You get a bunch of default implementations of actions:
