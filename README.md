@@ -1,10 +1,17 @@
 #Windsor
 
-####Windsor is basically a super-controller for Ruby on Rails from which you can inherit in order to easily get some nice default actions for a RESTful API that allows you to do basic CRUD for a given ActiveModel.
+####Windsor is a Ruby gem for [Ruby on Rails](http://rubyonrails.org/) that can help you build [RESTful](http://en.wikipedia.org/wiki/Representational_state_transfer) APIs more easily.  
+
+It provides:
+* Better handling of HTTP methods and better use HTTP status codes and headers
+* Better support for [hyperlinks in representations](http://roy.gbiv.com/untangled/2008/rest-apis-must-be-hypertext-driven), making it easier to create some [standard links](http://www.iana.org/assignments/link-relations/link-relations.xml) as well as some links that are generated from your model relationships.
+* Better support for collections of resources with built-in features like [AtomPub-style pagination](http://tools.ietf.org/html/rfc5005#section-3).
+
+Current state:  Under heavy development!  This gem is current very tied to ActiveModel for creating APIs, but we're working on decoupling that slightly so that Windsor controllers are more generally applicable and extendable.
 
 Example:
 
-If you have a 'User' model, you can expose it as a RESTful resource by creating a controller like this:
+If you have a 'User' model, you can expose it as a RESTful resource by simply creating a controller that inherits from the Windsor controller and has the same name as the model:
 
     class JsonResources::UsersController < JsonResourcesController
     end
