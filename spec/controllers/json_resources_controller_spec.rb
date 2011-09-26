@@ -1,9 +1,5 @@
 require 'spec_helper'
 
-class Tester < ActiveRecord::Base
-  attr_accessible :name, :id
-end
-
 class TesterController < JsonResourcesController
 end
 
