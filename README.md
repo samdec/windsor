@@ -11,17 +11,23 @@
 ##Current state:  
 Under heavy development!  This gem is current very tied to ActiveModel for creating APIs, but we're working on decoupling that slightly so that Windsor controllers are more generally applicable and extendable.
 
-Example:
+##Install:
+    gem install windsor
+with Bundler:
+
+    gem 'windsor'    
+
+##Usage:
 
 If you have a 'User' model, you can expose it as a RESTful resource by simply creating a controller that inherits from the Windsor controller and has the same name as the model:
 
-    class JsonResources::UsersController < JsonResourcesController
+    class UsersController < WindsorController
     end
 
 The controller extracts the model name from the controller name, and you can route to it like you normally would:
 
     HelloREST::Application.routes.draw do
-      namespace :json_resources, :path => '/api' do
+      scope :path => '/api' do
         resources :users
       end
     end
@@ -35,7 +41,12 @@ PUT /api/user/{id} will allow you to delete that user with the matching id
 
 Here's how a GET to /api/users/1 would look:
 
-    {"username":"grizzle","email_address":"grizzle@example.com","self":"http://example.com/api/users/1","index":"http://example.com/api/users"},
+    {
+      "username" : "greggg",
+      "email_address" : "greggg@example.com",
+      "self" : "http://example.com/api/users/1",
+      "index" : "http://example.com/api/users"
+    }
 
 Here's how a GET to /api/users/ (the collection) would look:
 
@@ -45,13 +56,19 @@ Here's how a GET to /api/users/ (the collection) would look:
       {"username":"gdizzle","email_address":"gdizzle@example.com","self":"http://example.com/api/users/2","index":"http://example.com/api/users"},
       {"username":"samdec","email_address":"samdec@example.com","self":"http://example.com/api/users/3","index":"http://example.com/api/users"}
      ],
+     "pagination": {
+       "total_items": 3,
+       "max_page_size": 100,
+       "first": "http://example.com/api/users?page=1",
+       "last": "http://example.com/api/users?page=1"
+     },
      "self":"http://example.com/api/users"
     }
 
 
 What if we don't want to allow an action (like DELETE for example)?
 
-    class JsonResources::UsersController < JsonResourcesController
+    class UsersController < WindsorController
       def set_actions
         actions :all, :except => [:destroy]  # allow all actions, except destroy
       end
@@ -59,7 +76,7 @@ What if we don't want to allow an action (like DELETE for example)?
 
 What if we also don't want to show some of the attributes that are on the model (like created_at, updated_at, and id for example)?
  
-    class JsonResources::UsersController < JsonResourcesController
+    class UsersController < WindsorController
       def set_actions
         actions :all, :except => [:destroy]  # allow all actions, except destroy
       end
