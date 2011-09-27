@@ -146,7 +146,8 @@ class WindsorController < ApplicationController
     end
   end
   
-  def get_self_link(object_hash)
+  def get_self_link(object_hash = nil)
+    return request_uri if object_hash.nil? 
     url_conditions = { :controller => get_controller_name, :action => "index" }
     url_conditions.merge!(:action => "show", :id => object_hash["id"].to_s) unless object_hash["id"].nil?
     url_for(url_conditions)
@@ -156,9 +157,7 @@ class WindsorController < ApplicationController
     model_class.name.underscore.pluralize
   end
     
-  private
-  
-    def get_pagination_object(total_items, current_page_index)
+  def get_pagination_object(total_items, current_page_index)
       total_pages = (total_items.to_f / @max_page_size).ceil
       total_pages = 1 if total_pages == 0 # Collections with no items in them still have 1 page.
       last_page_index = total_pages - 1
@@ -166,23 +165,30 @@ class WindsorController < ApplicationController
       pagination = {
         :total_items => total_items, 
         :max_page_size => @max_page_size,
-        :first => page_link(1),
-        :last => page_link(total_pages.to_s)
+        :links => [
+          { :rel => 'first', :href => page_link(1) },
+          { :rel => 'last', :href => page_link(total_pages.to_s)}
+        ]
       }
       unless current_page_index == last_page_index
-        pagination[:next] = page_link((current_page_index + 2))
+        pagination[:links] << { :rel => 'next', :href => page_link((current_page_index + 2)) }
       end
       if current_page_index >= 1
-        pagination[:previous] = page_link(current_page_index)
+        pagination[:links] << { :rel => 'previous', :href => page_link(current_page_index) }
       end      
       return pagination
-    end
+  end
+
+  private
+  
+    def request_uri
+      request.base_url + request.path
+    end  
     
     def page_link(page_number)
       query_parameters = request.query_parameters
-      base_url = request.base_url + request.path
       query_parameters[:page] = page_number
-      return base_url + "?" + query_parameters.to_query
+      return request_uri + "?" + query_parameters.to_query
     end        
   
     # Removes extra attributes passed in. Extra attributes is defined as attributes not sent in a GET.
@@ -212,8 +218,15 @@ class WindsorController < ApplicationController
       {}
     end
     
+    def add_link(object, href, rel)
+      unless object['links'].is_a?(Array)
+        object['links'] = []
+      end  
+      object['links'] << { 'rel' => rel, 'href' => href }
+    end
+    
     def prepare_representation(object)
-      object.merge!(:self => get_self_link(object))
+      add_link( object, get_self_link(object), 'self' )
       attributes = enabled_attributes(object)
       object.each do |key, value|
         object.delete key unless attributes.include?(key)
@@ -240,7 +253,7 @@ class WindsorController < ApplicationController
           object[list_name].map! do |item|
             prepare_representation(hashity_hash(item))
           end
-          object[:self] = get_self_link(object)
+          add_link( object, get_self_link(object), 'self' )
         else
           object = prepare_representation(hashity_hash(object))
         end

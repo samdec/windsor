@@ -41,7 +41,7 @@ describe TestersController do
       context "and valid attributes with extra attributes are given" do
         it "returns 201 with the matching representation in json, the extra attributes are ignored" do
           input = { "name" => "New Name", "id" => 1, "this_is_an_attribute_that_doesn't_exiti_on_the_model" => 42 }
-          expected = {"name" => "New Name", "id" => 1, "self" => "http://test.host/testers/1"}
+          expected = {"name" => "New Name", "id" => 1, "links" => [ { "rel" => "self", "href" => "http://test.host/testers/1" } ]}
 
           mock_check_object_model
           
@@ -106,10 +106,12 @@ describe TestersController do
           :pagination => {
             :total_items => 0, 
             :max_page_size => 100,
-            :first => 'http://test.host/testers?page=1',
-            :last => 'http://test.host/testers?page=1'
+            :links => [
+              { :rel => 'first', :href => 'http://test.host/testers?page=1'},
+              { :rel => 'last', :href => 'http://test.host/testers?page=1'}
+            ]  
           },  
-          :self => 'http://test.host/testers'
+          :links => [ { "rel" => "self", "href" => "http://test.host/testers" } ]
         }
         response_should_be(expected, 200)
       end
@@ -120,16 +122,18 @@ describe TestersController do
       it "returns a list with two accounts and a paging object" do
         expected = { 
                      :testers => [ 
-                                    { :name => "Tester 1", :id => 1, :self => 'http://test.host/testers/1' }, 
-                                    { :name => "Tester 2", :id => 2, :self => 'http://test.host/testers/2' }  
+                                    { :name => "Tester 1", :id => 1, :links => [ { "rel" => "self", "href" => "http://test.host/testers/1" } ] }, 
+                                    { :name => "Tester 2", :id => 2, :links => [ { "rel" => "self", "href" => "http://test.host/testers/2" } ] }  
                                   ], 
                      :pagination => {
                        :total_items => 2, 
                        :max_page_size => 100,
-                       :first => 'http://test.host/testers?page=1',
-                       :last => 'http://test.host/testers?page=1'
+                       :links => [
+                         { :rel => 'first', :href => 'http://test.host/testers?page=1'},
+                         { :rel => 'last', :href => 'http://test.host/testers?page=1'}
+                       ]
                      },
-                     :self => 'http://test.host/testers',
+                     :links => [ { "rel" => "self", "href" => "http://test.host/testers" } ],
                    }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
@@ -158,17 +162,21 @@ describe TestersController do
       it "returns a list with two testers and a paging object" do
         expected = { 
                      :testers => [ 
-                                    { :name => "Tester 1", :id => 1, :self => 'http://test.host/testers/1' }, 
-                                    { :name => "Tester 2", :id => 2, :self => 'http://test.host/testers/2' }, 
+                                    { :name => "Tester 1", :id => 1, :links => [ { "rel" => "self", "href" => "http://test.host/testers/1" } ] }, 
+                                    { :name => "Tester 2", :id => 2, :links => [ { "rel" => "self", "href" => "http://test.host/testers/2" } ] }, 
                                   ], 
                      :pagination => {
                        :total_items => 3, 
                        :max_page_size => 2,
-                       :first => 'http://test.host/testers?page=1',
-                       :last => 'http://test.host/testers?page=2',
-                       :next => 'http://test.host/testers?page=2'
+                       :links => [
+                         { :rel => 'first', :href => 'http://test.host/testers?page=1' },
+                         { :rel => 'last', :href => 'http://test.host/testers?page=2' },
+                         { :rel => 'next', :href => 'http://test.host/testers?page=2' }
+                       ]
                      },
-                     :self => 'http://test.host/testers',
+                     :links => [
+                         { :rel => 'self',  :href => 'http://test.host/testers' }
+                      ]
                    }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
@@ -188,16 +196,25 @@ describe TestersController do
         it "returns a 1 item list and a paging object" do
           expected = { 
                        :testers => [ 
-                                      { :name => "Tester 3", :id => 3, :self => 'http://test.host/testers/3' } 
+                                      { 
+                                        :name => "Tester 3", :id => 3, 
+                                        :links => [
+                                             { :rel => 'self',  :href => 'http://test.host/testers/3' }
+                                          ]
+                                      } 
                                     ], 
                        :pagination => {
                          :total_items => 3, 
                          :max_page_size => 2,
-                         :first => 'http://test.host/testers?page=1',
-                         :last => 'http://test.host/testers?page=2',
-                         :previous => 'http://test.host/testers?page=1'
+                         :links => [
+                           { :rel => 'first', :href => 'http://test.host/testers?page=1' },
+                           { :rel => 'last', :href => 'http://test.host/testers?page=2' },
+                           { :rel => 'previous', :href => 'http://test.host/testers?page=1' }
+                         ]
                        },
-                       :self => 'http://test.host/testers',
+                       :links => [
+                            { :rel => 'self',  :href => 'http://test.host/testers' }
+                      ]
                      }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "3"}).and_return('http://test.host/testers/3')
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
@@ -258,7 +275,7 @@ describe TestersController do
           Tester.stub_chain(:where, :find).and_return(tester)
           tester.should_receive(:update_attributes).with(attributes).and_return(true)
           put_json(:update, 1, attributes)
-          response_should_be(attributes.merge!(:self => "http://test.host/testers/1"), 200)
+          response_should_be(attributes.merge!( "links" => [ { "rel" => "self", "href" => "http://test.host/testers/1" } ] ), 200)
         end
       end
       
@@ -272,7 +289,7 @@ describe TestersController do
           Tester.stub_chain(:where, :find).and_return(tester)
           tester.should_receive(:update_attributes).with({"name" => "New Name", "id" => 1}).and_return(true)
           put_json(:update, 1, attributes)
-          response_should_be({"name" => "New Name", "id" => 1, "self" => "http://test.host/testers/1"}, 200)
+          response_should_be({"name" => "New Name", "id" => 1, "links" => [ { "rel" => "self", "href" => "http://test.host/testers/1" } ]}, 200)
 	      end
       end
       
@@ -356,7 +373,7 @@ describe TestersController do
           tester.should_receive(:testers).and_return(nil)
           Tester.stub_chain(:where, :find).and_return(tester)
           get :show, :id => 1, :format => :json
-          response_should_be(expected.merge("self" => 'http://test.host/tester/1'), 200)
+          response_should_be(expected.merge("links" => ["rel" => "self", "href" => 'http://test.host/tester/1']), 200)
         end    
       end
     
