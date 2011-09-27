@@ -7,7 +7,7 @@ require "windsor/version"
 Gem::Specification.new do |s|
   s.name        = "windsor"
   s.version     = Windsor::VERSION
-  s.authors     = ["Sam DeCesare", "Greggggggggggggggggggggggggggggggggggggggggggggg Caines"]
+  s.authors     = ["Sam DeCesare", "Gregg Caines"]
   s.email       = ["sam@samdecesare.com", "gregg@caines.ca"]
   s.homepage    = "http://windsorapi.org"
   s.summary     = "Windsor is a plugin for building RESTful APIs in Rails."
