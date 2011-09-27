@@ -44,25 +44,46 @@ Here's how a GET to /api/users/1 would look:
     {
       "username" : "greggg",
       "email_address" : "greggg@example.com",
-      "self" : "http://example.com/api/users/1",
-      "index" : "http://example.com/api/users"
+		  "links": [
+		    {
+		      "rel" : "self",
+		      "href" : "http://example.com/api/users"
+		    },
+				{
+					"rel" : "index",
+					"href" : "http://example.com/api/users"
+				}	
+		  ]
     }
 
 Here's how a GET to /api/users/ (the collection) would look:
 
     {
-     "users":[
-      {"username":"asdf","email_address":"asdf@example.com","self":"http://example.com/api/users/1","index":"http://example.com/api/users"},
-      {"username":"gdizzle","email_address":"gdizzle@example.com","self":"http://example.com/api/users/2","index":"http://example.com/api/users"},
-      {"username":"samdec","email_address":"samdec@example.com","self":"http://example.com/api/users/3","index":"http://example.com/api/users"}
-     ],
-     "pagination": {
-       "total_items": 3,
-       "max_page_size": 100,
-       "first": "http://example.com/api/users?page=1",
-       "last": "http://example.com/api/users?page=1"
+      "users":[
+       {"username":"asdf","email_address":"asdf@example.com","self":"http://example.com/api/users/1","index":"http://example.com/api/users"},
+       {"username":"gdizzle","email_address":"gdizzle@example.com","self":"http://example.com/api/users/2","index":"http://example.com/api/users"},
+       {"username":"samdec","email_address":"samdec@example.com","self":"http://example.com/api/users/3","index":"http://example.com/api/users"}
+      ],
+      "pagination": {
+        "total_items": 3,
+        "max_page_size": 100,
+  		  "links": [
+  		    {
+ 	  		   "rel": "first",
+		  	   "href": "http://example.com/api/users?page=1"
+			    },
+			    {
+			      "rel": "last",
+			      "href": "http://example.com/api/users?page=1"
+			    }
+			  ]
      },
-     "self":"http://example.com/api/users"
+		 "links": [
+		   {
+		     "rel": "self",
+		     "href": "http://example.com/api/users"
+		   }
+		 ]
     }
 
 
