@@ -11,8 +11,9 @@ Gem::Specification.new do |s|
   s.email       = ["sam@samdecesare.com", "gregg@caines.ca"]
   s.homepage    = "http://windsorapi.org"
   s.summary     = "Windsor is a plugin for building RESTful APIs in Rails."
+  s.description     = "Windsor is a plugin for building RESTful APIs in Rails."
 
-  s.files = Dir["{app,config,db,lib}/**/*"] + ["LICENSE", "Rakefile", "README.rdoc"]
+  s.files = Dir["{app,lib}/**/*"] + ["LICENSE", "Rakefile", "README.rdoc"]
   # s.test_files = Dir["spec/**/*"]
 
   s.add_dependency "rails", "~> 3.1.0"

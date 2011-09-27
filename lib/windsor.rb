@@ -1,4 +1,4 @@
+require 'windsor/rails' if defined?(Rails)
+
 module Windsor
 end
-
-require 'windsor/rails'

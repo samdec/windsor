@@ -1,7 +1,6 @@
 require 'rails'
-require 'active_resource'
 
-require_relative '../app/controllers/windsor/json_resources_controller'
+require_relative '../app/controllers/windsor_controller'
 
 require 'simplecov'
 SimpleCov.start 'rails'

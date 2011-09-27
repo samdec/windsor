@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-class TesterController < JsonResourcesController
+class TesterController < WindsorController
 end
 
 def mock_check_object_model

@@ -1,4 +1,4 @@
-class Windsor::JsonResourcesController < ApplicationController
+class WindsorController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, :with => :resource_not_found
   rescue_from JSON::ParserError, :with => :unsupported_media_type
   
