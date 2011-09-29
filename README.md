@@ -26,10 +26,8 @@ If you have a 'User' model, you can expose it as a RESTful resource by simply cr
 
 The controller extracts the model name from the controller name, and you can route to it like you normally would:
 
-    HelloREST::Application.routes.draw do
-      scope :path => '/api' do
-        resources :users
-      end
+    scope :path => '/api' do
+      resources :users
     end
 
 You get a bunch of default implementations of actions:
@@ -44,88 +42,48 @@ Here's how a GET to /api/users/1 would look:
     {
       "username" : "greggg",
       "email_address" : "greggg@example.com",
-      "links": [
-        {
-          "rel" : "self",
-          "href" : "http://example.com/api/users/1"
-        },
-        {
-          "rel" : "index",
-          "href" : "http://example.com/api/users"
-        }
+      "links" : [
+        { "rel" : "self",  "href" : "http://example.com/api/users/1" },
+        { "rel" : "index", "href" : "http://example.com/api/users" }
       ]
     }
 
 Here's how a GET to /api/users/ (the collection) would look:
 
     {
-      "users":[
+      "users" : [
         {
           "username" : "greggg",
           "email_address" : "greggg@example.com",
-          "links": [
-            {
-              "rel" : "self",
-              "href" : "http://example.com/api/users/1"
-            },
-            {
-              "rel" : "index",
-              "href" : "http://example.com/api/users"
-            }
-          ]
+          "links" : [
+            { "rel" : "self",  "href" : "http://example.com/api/users/1" },
+            { "rel" : "index", "href" : "http://example.com/api/users" } ]
         },
         {
           "username" : "samdec",
           "email_address" : "samdec@example.com",
-          "links": [
-            {
-              "rel" : "self",
-              "href" : "http://example.com/api/users/2"
-            },
-            {
-              "rel" : "index",
-              "href" : "http://example.com/api/users"
-            }
-          ]
+          "links" : [
+            { "rel" : "self",  "href" : "http://example.com/api/users/2" },
+            { "rel" : "index", "href" : "http://example.com/api/users" } ]
         },
         {
           "username" : "seth",
           "email_address" : "seth@example.com",
-          "links": [
-            {
-              "rel" : "self",
-              "href" : "http://example.com/api/users/3"
-            },
-            {
-              "rel" : "index",
-              "href" : "http://example.com/api/users"
-            }
-          ]
+          "links" : [
+            { "rel" : "self", "href" : "http://example.com/api/users/3" },
+            { "rel" : "index","href" : "http://example.com/api/users" } ]
         }
       ],
-      "links": [
-        {
-          "rel": "self",
-          "href": "http://example.com/api/users"
-        }
+      "links" : [
+        { "rel" : "self", "href" : "http://example.com/api/users" }
       ],
-      "pagination": {
-        "total_items": 9,
-        "max_page_size": 3,
-        "links": [
-          {
-            "rel": "next",
-            "href": "http://example.com/api/users?page=2
-          },
-          {
-            "rel": "first",
-            "href": "http://example.com/api/users?page=1"
-          },
-          {
-            "rel": "last",
-            "href": "http://example.com/api/users?page=3"
-          }
-        ]
+      "pagination" : {
+        "total_items" : 9,
+        "max_page_size" : 3,
+        "links" : [
+          { "rel" : "next",  "href" : "http://example.com/api/users?page=2" },
+          { "rel" : "first", "href" : "http://example.com/api/users?page=1" },
+          { "rel" : "last",  "href" : "http://example.com/api/users?page=3" } ]
       }
     }
 
@@ -136,6 +94,22 @@ What if we don't want to allow an action (like DELETE for example)?
       def set_actions
         actions :all, :except => [:destroy]  # allow all actions, except destroy
       end
+    end
+
+If you have a model that is a child of another model simply set up your nested routes:
+
+    scope :path => '/api' do
+      resources :accounts do
+        resources :users
+      end
+    end
+
+then in your Users controller:
+
+    class UsersController < WindsorController
+      def scope
+        { :account_id => params[:account_id] }
+      end
     end
 
 What if we also don't want to show some of the attributes that are on the model (like created_at, updated_at, and id for example)?
