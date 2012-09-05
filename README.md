@@ -42,10 +42,10 @@ Here's how a GET to /api/users/1 would look:
     {
       "username" : "greggg",
       "email_address" : "greggg@example.com",
-      "links" : [
-        { "rel" : "self",  "href" : "http://example.com/api/users/1" },
-        { "rel" : "index", "href" : "http://example.com/api/users" }
-      ]
+      "links" : {
+        "self" : { "href" : "http://example.com/api/users/1" },
+        "index" : { "href" : "http://example.com/api/users" }
+      }
     }
 
 Here's how a GET to /api/users/ (the collection) would look:
@@ -55,35 +55,36 @@ Here's how a GET to /api/users/ (the collection) would look:
         {
           "username" : "greggg",
           "email_address" : "greggg@example.com",
-          "links" : [
-            { "rel" : "self",  "href" : "http://example.com/api/users/1" },
-            { "rel" : "index", "href" : "http://example.com/api/users" } ]
+          "links" : {
+            "self" : { "href" : "http://example.com/api/users/1" }
+          }
         },
         {
           "username" : "samdec",
           "email_address" : "samdec@example.com",
-          "links" : [
-            { "rel" : "self",  "href" : "http://example.com/api/users/2" },
-            { "rel" : "index", "href" : "http://example.com/api/users" } ]
+          "links" : {
+            "self" : { "href" : "http://example.com/api/users/2" }
+          }
         },
         {
           "username" : "seth",
           "email_address" : "seth@example.com",
-          "links" : [
-            { "rel" : "self", "href" : "http://example.com/api/users/3" },
-            { "rel" : "index","href" : "http://example.com/api/users" } ]
+          "links" : {
+            "self" : { "href" : "http://example.com/api/users/3" }
+          }
         }
       ],
-      "links" : [
-        { "rel" : "self", "href" : "http://example.com/api/users" }
-      ],
+      "links" : {
+        "self" : { "href" : "http://example.com/api/users" }
+      },
       "pagination" : {
         "total_items" : 9,
         "max_page_size" : 3,
-        "links" : [
-          { "rel" : "next",  "href" : "http://example.com/api/users?page=2" },
-          { "rel" : "first", "href" : "http://example.com/api/users?page=1" },
-          { "rel" : "last",  "href" : "http://example.com/api/users?page=3" } ]
+        "links" : {
+          "next" : { "href" : "http://example.com/api/users?page=2" },
+          "first" : { "href" : "http://example.com/api/users?page=1" },
+          "last" : { "href" : "http://example.com/api/users?page=3" }
+        }
       }
     }
 

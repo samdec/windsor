@@ -165,16 +165,16 @@ class WindsorController < ApplicationController
       pagination = {
         :total_items => total_items, 
         :max_page_size => @max_page_size,
-        :links => [
-          { :rel => 'first', :href => page_link(1) },
-          { :rel => 'last', :href => page_link(total_pages.to_s)}
-        ]
+        :links => {
+          :first => { :href => page_link(1) },
+          :last => { :href => page_link(total_pages.to_s)}
+        }
       }
       unless current_page_index == last_page_index
-        pagination[:links] << { :rel => 'next', :href => page_link((current_page_index + 2)) }
+        pagination[:links][:next] = { :href => page_link((current_page_index + 2)) }
       end
       if current_page_index >= 1
-        pagination[:links] << { :rel => 'previous', :href => page_link(current_page_index) }
+        pagination[:links][:previous] = { :href => page_link(current_page_index) }
       end      
       return pagination
   end
@@ -219,10 +219,10 @@ class WindsorController < ApplicationController
     end
     
     def add_link(object, href, rel)
-      unless object['links'].is_a?(Array)
-        object['links'] = []
+      unless object['links'].is_a?(Hash)
+        object['links'] = {}
       end  
-      object['links'] << { 'rel' => rel, 'href' => href }
+      object['links'][rel] = { 'href' => href }
     end
     
     def prepare_representation(object)
