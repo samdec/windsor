@@ -40,7 +40,10 @@ def response_should_be(expected, code)
 end
 
 def error_response_should_be(code, type, message = "", detail = {})
-  body = { :error => { :type => type, :message => message, :detail => detail } }
+  body = { :error => { :type => type, :message => message } }
+  unless detail.empty?
+    body[:error][:detail] = detail
+  end
   response_should_be(body, code)
 end
 

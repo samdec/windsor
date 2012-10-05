@@ -270,7 +270,11 @@ class WindsorController < ApplicationController
     def render_error(status, type, message = "", detail = {})
       raise ArgumentError unless status && type
       raise ArgumentError unless message.is_a?(String)
-      render :json => { :error => { :type => type.to_s, :message => message, :detail => detail } }, :status => status
+      error = ({:error => {:type => type.to_s, :message => message}})
+      unless detail.empty?
+        error[:error][:detail] = detail
+      end
+      render :json => error, :status => status
     end
                  
   
