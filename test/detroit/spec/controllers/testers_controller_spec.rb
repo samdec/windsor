@@ -98,8 +98,8 @@ describe TestersController do
       it "returns an empty list" do
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
         request.stub!(:path).and_return('/testers')
-        Tester.stub_chain(:where, :limit, :offset, :all).and_return([])
-        Tester.should_receive(:count).and_return(0)
+        Tester.stub_chain(:where, :limit, :offset).and_return([])
+        Tester.stub_chain(:where, :count).and_return(0)
         get :index, :format => :json
         expected = {
           :testers => [], 
@@ -117,24 +117,23 @@ describe TestersController do
       end
     end
     
-  
-     context "When two testers exist" do
-      it "returns a list with two accounts and a paging object" do
+    context "When two testers exist" do
+      it "returns a list with two testers and a paging object" do
         expected = { 
-                     :testers => [ 
-                                    { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" }} }, 
-                                    { :name => "Tester 2", :id => 2, :links => { :self => { "href" => "http://test.host/testers/2" }} }  
-                                  ], 
-                     :pagination => {
-                       :total_items => 2, 
-                       :max_page_size => 100,
-                       :links => {
-                         :first => { :href => 'http://test.host/testers?page=1'},
-                         :last => { :href => 'http://test.host/testers?page=1'}
-                       }
-                     },
-                     :links => { :self => { "href" => "http://test.host/testers" } },
-                   }
+          :testers => [ 
+            { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" }} }, 
+            { :name => "Tester 2", :id => 2, :links => { :self => { "href" => "http://test.host/testers/2" }} }  
+          ], 
+          :pagination => {
+            :total_items => 2, 
+            :max_page_size => 100,
+            :links => {
+              :first => { :href => 'http://test.host/testers?page=1'},
+              :last => { :href => 'http://test.host/testers?page=1'}
+            }
+          },
+          :links => { :self => { "href" => "http://test.host/testers" } },
+        }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
@@ -143,10 +142,41 @@ describe TestersController do
         tester2 = mock_model(Tester)
         tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
         tester2.should_receive(:attributes).and_return({ "name" => "Tester 2", "id" => 2})
-        Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester1, tester2])
-        Tester.should_receive(:count).and_return(2)
+        Tester.stub_chain(:where, :limit, :offset).and_return([tester1, tester2])
+        Tester.stub_chain(:where, :count).and_return(2)
         get :index, :format => :json
         response_should_be(expected, 200)
+      end
+
+      context "when the query parameter name = Tester 1 is passed in" do
+        it "returns a list with one tester and a paging object" do
+          expected = { 
+            :testers => [ 
+              { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" }} }
+            ], 
+            :pagination => {
+              :total_items => 1, 
+              :max_page_size => 100,
+              :links => {
+                :first => { :href => 'http://test.host/testers?name=Tester+1&page=1'},
+                :last => { :href => 'http://test.host/testers?name=Tester+1&page=1'}
+              }
+            },
+            :links => { :self => { "href" => "http://test.host/testers" } },
+          }
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+          request.stub!(:path).and_return('/testers')
+          tester1 = mock_model(Tester)
+          tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
+
+          arel_mock_object = mock()
+          arel_mock_object.stub_chain(:limit, :offset).and_return([tester1])
+          Tester.should_receive(:where).with(:name => "Tester 1").and_return(arel_mock_object)
+          Tester.stub_chain(:where, :count).and_return(1)
+          get :index, :format => :json, :name => "Tester 1"
+          response_should_be(expected, 200)
+        end
       end
     end        
 
@@ -161,23 +191,23 @@ describe TestersController do
        
       it "returns a list with two testers and a paging object" do
         expected = { 
-                     :testers => [ 
-                                    { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" } } }, 
-                                    { :name => "Tester 2", :id => 2, :links => { :self => {  "href" => "http://test.host/testers/2" } } }, 
-                                  ], 
-                     :pagination => {
-                       :total_items => 3, 
-                       :max_page_size => 2,
-                       :links => {
-                         :first => { :href => 'http://test.host/testers?page=1' },
-                         :last => { :href => 'http://test.host/testers?page=2' },
-                         :next => { :href => 'http://test.host/testers?page=2' }
-                       }
-                     },
-                     :links => {
-                         :self => { :href => 'http://test.host/testers' }
-                      }
-                   }
+          :testers => [ 
+            { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" } } }, 
+            { :name => "Tester 2", :id => 2, :links => { :self => {  "href" => "http://test.host/testers/2" } } }, 
+          ], 
+         :pagination => {
+           :total_items => 3, 
+           :max_page_size => 2,
+           :links => {
+             :first => { :href => 'http://test.host/testers?page=1' },
+             :last => { :href => 'http://test.host/testers?page=2' },
+             :next => { :href => 'http://test.host/testers?page=2' }
+           }
+         },
+         :links => {
+             :self => { :href => 'http://test.host/testers' }
+          }
+       }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
@@ -186,8 +216,8 @@ describe TestersController do
         tester2 = mock_model(Tester)
         tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
         tester2.should_receive(:attributes).and_return({ "name" => "Tester 2", "id" => 2})
-        Tester.should_receive(:count).and_return(3)
-        Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester1, tester2])
+        Tester.stub_chain(:where, :count).and_return(3)
+        Tester.stub_chain(:where, :limit, :offset).and_return([tester1, tester2])
         get :index, :format => :json
         response_should_be(expected, 200)
       end
@@ -195,34 +225,34 @@ describe TestersController do
       context "page is set to 2" do
         it "returns a 1 item list and a paging object" do
           expected = { 
-                       :testers => [ 
-                                      { 
-                                        :name => "Tester 3", :id => 3, 
-                                        :links => {
-                                            :self => { :href => 'http://test.host/testers/3' }
-                                          }
-                                      } 
-                                    ], 
-                       :pagination => {
-                         :total_items => 3, 
-                         :max_page_size => 2,
-                         :links => {
-                           :first => { :href => 'http://test.host/testers?page=1' },
-                           :last => { :href => 'http://test.host/testers?page=2' },
-                           :previous => { :href => 'http://test.host/testers?page=1' }
-                         }
-                       },
-                       :links => {
-                          :self => { :href => 'http://test.host/testers' }
-                      }
-                     }
+            :testers => [ 
+              { 
+                :name => "Tester 3", :id => 3, 
+                :links => {
+                    :self => { :href => 'http://test.host/testers/3' }
+                  }
+              } 
+            ], 
+            :pagination => {
+              :total_items => 3, 
+              :max_page_size => 2,
+              :links => {
+                :first => { :href => 'http://test.host/testers?page=1' },
+                :last => { :href => 'http://test.host/testers?page=2' },
+                :previous => { :href => 'http://test.host/testers?page=1' }
+              }
+            },
+            :links => {
+              :self => { :href => 'http://test.host/testers' }
+            }
+           }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "3"}).and_return('http://test.host/testers/3')
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           request.stub!(:path).and_return('/testers')
-          Tester.should_receive(:count).and_return(3)
+          Tester.stub_chain(:where, :count).and_return(3)
           tester3 = mock_model(Tester)
           tester3.should_receive(:attributes).and_return({ "name" => "Tester 3", "id" => 3})
-          Tester.stub_chain(:where, :limit, :offset, :all).and_return([tester3])
+          Tester.stub_chain(:where, :limit, :offset).and_return([tester3])
           get :index, :format => :json, :page => 2
           response_should_be(expected, 200)
         end        
