@@ -18,7 +18,7 @@ class WindsorController < ApplicationController
       offset = @max_page_size * current_page_index  
     end
     final_scope = scope.merge(request.query_parameters)
-    items = model_class.where(final_scope).limit(@max_page_size).offset(offset)
+    items = model_class.where(final_scope).limit(@max_page_size).offset(offset).to_a
     total_items = model_class.where(final_scope).count
 
     object = { 
