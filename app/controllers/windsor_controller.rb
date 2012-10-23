@@ -229,6 +229,7 @@ class WindsorController < ApplicationController
     def prepare_representation(object)
       add_link( object, get_self_link(object), 'self' )
       attributes = enabled_attributes(object)
+      attributes << "links"
       object.each do |key, value|
         object.delete key unless attributes.include?(key)
       end

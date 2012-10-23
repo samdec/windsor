@@ -415,7 +415,7 @@ describe TestersController do
     
       context "and in the representation none of the attributes are shown except one" do
         it "returns the representation with none of the attributes except that one" do
-          expected = { "name" => "Tester 1" }
+          expected = { "name" => "Tester 1", "links" => { "self" => { "href" => 'http://test.host/tester/1' }} }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/tester/1')
           tester = mock_model(Tester)
           tester.should_receive(:attributes).and_return({ "id" => 1 }.merge(expected))
