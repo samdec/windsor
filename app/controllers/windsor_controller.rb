@@ -153,6 +153,11 @@ class WindsorController < ApplicationController
     url_conditions.merge!(:action => "show", :id => object_hash["id"].to_s) unless object_hash["id"].nil?
     url_for(url_conditions)
   end
+
+  def get_index_link
+    url_conditions = { :controller => get_controller_name, :action => "index" }
+    url_for(url_conditions)
+  end
   
   def get_controller_name
     model_class.name.underscore.pluralize
@@ -184,13 +189,13 @@ class WindsorController < ApplicationController
   
     def request_uri
       request.base_url + request.path
-    end  
-    
+    end
+
     def page_link(page_number)
       query_parameters = request.query_parameters
       query_parameters[:page] = page_number
       return request_uri + "?" + query_parameters.to_query
-    end        
+    end
   
     # Removes extra attributes passed in. Extra attributes is defined as attributes not sent in a GET.
     def prune_extra_attributes(request_body, existing_attributes)    
@@ -206,8 +211,8 @@ class WindsorController < ApplicationController
   
     def get_resource
       @model_object = model_class.where(scope).find(params[:id])
-    end      
-  
+    end
+
     def check_implemented
       set_actions
       unless enabled_actions.include?(params[:action].to_sym)
@@ -228,6 +233,9 @@ class WindsorController < ApplicationController
     
     def prepare_representation(object)
       add_link( object, get_self_link(object), 'self' )
+      if enabled_actions.include?(:index) && !object["id"].nil?
+        add_link( object, get_index_link, 'index')
+      end
       attributes = enabled_attributes(object)
       attributes << "links"
       object.each do |key, value|

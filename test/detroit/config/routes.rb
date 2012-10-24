@@ -1,7 +1,5 @@
 Detroit::Application.routes.draw do
-  scope :path => '/api' do
-    resources :testers
-  end
+  resources :testers
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

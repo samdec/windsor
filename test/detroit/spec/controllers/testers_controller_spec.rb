@@ -24,7 +24,8 @@ describe TestersController do
           input = { "name" => "Test Account", "id" => 1 }
           expected = { "name" => "Test Account","id" => 1 }
           @controller.should_receive(:url_for).twice.with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+
           mock_check_object_model
           
           tester = mock_model(Tester)
@@ -33,7 +34,7 @@ describe TestersController do
           tester.should_receive(:testers).and_return(nil)
           tester.should_receive(:id).and_return(1)
           tester.should_receive(:attributes).and_return(expected)
-
+          expected.merge!({"links" => { "self" => {"href" => "http://test.host/testers/1"}, "index" => { "href" => "http://test.host/testers"}}})
           json_post_response_should_be(:create, input, expected, 201)
         end
       end
@@ -41,12 +42,24 @@ describe TestersController do
       context "and valid attributes with extra attributes are given" do
         it "returns 201 with the matching representation in json, the extra attributes are ignored" do
           input = { "name" => "New Name", "id" => 1, "this_is_an_attribute_that_doesn't_exiti_on_the_model" => 42 }
-          expected = {"name" => "New Name", "id" => 1, "links" => { "self" => { "href" => "http://test.host/testers/1" }}}
+          expected = {
+            "name" => "New Name", 
+            "id" => 1, 
+            "links" => { 
+              "self" => { 
+                "href" => "http://test.host/testers/1" 
+              }, 
+              "index" => { 
+                "href" => "http://test.host/testers"
+              }
+            }
+          }
 
           mock_check_object_model
           
           @controller.should_receive(:url_for).twice.with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+
           object_to_be_created = mock_model(Tester)
           Tester.should_receive(:new).with( { "name" => "New Name", "id" => 1}).and_return(object_to_be_created)
           object_to_be_created.should_receive(:save).and_return(true)
@@ -121,8 +134,22 @@ describe TestersController do
       it "returns a list with two testers and a paging object" do
         expected = { 
           :testers => [ 
-            { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" }} }, 
-            { :name => "Tester 2", :id => 2, :links => { :self => { "href" => "http://test.host/testers/2" }} }  
+            { 
+              :name => "Tester 1", 
+              :id => 1, 
+              :links => { 
+                :self => { "href" => "http://test.host/testers/1" },
+                :index => { "href" => "http://test.host/testers"}
+              }
+            }, 
+            { 
+              :name => "Tester 2", 
+              :id => 2, 
+              :links => { 
+                :self => { "href" => "http://test.host/testers/2" },
+                :index => { "href" => "http://test.host/testers"}
+              } 
+            }
           ], 
           :pagination => {
             :total_items => 2, 
@@ -136,7 +163,7 @@ describe TestersController do
         }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
-        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
         request.stub!(:path).and_return('/testers')
         tester1 = mock_model(Tester)
         tester2 = mock_model(Tester)
@@ -152,7 +179,14 @@ describe TestersController do
         it "returns a list with one tester and a paging object" do
           expected = { 
             :testers => [ 
-              { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" }} }
+              { 
+                :name => "Tester 1", 
+                :id => 1, 
+                :links => { 
+                  :self => { "href" => "http://test.host/testers/1" },
+                  :index => { "href" => "http://test.host/testers"}
+                }
+              }
             ], 
             :pagination => {
               :total_items => 1, 
@@ -165,7 +199,7 @@ describe TestersController do
             :links => { :self => { "href" => "http://test.host/testers" } },
           }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+          @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           request.stub!(:path).and_return('/testers')
           tester1 = mock_model(Tester)
           tester1.should_receive(:attributes).and_return({ "name" => "Tester 1", "id" => 1})
@@ -192,9 +226,23 @@ describe TestersController do
       it "returns a list with two testers and a paging object" do
         expected = { 
           :testers => [ 
-            { :name => "Tester 1", :id => 1, :links => { :self => { "href" => "http://test.host/testers/1" } } }, 
-            { :name => "Tester 2", :id => 2, :links => { :self => {  "href" => "http://test.host/testers/2" } } }, 
-          ], 
+            { 
+              :name => "Tester 1", 
+              :id => 1, 
+              :links => { 
+                :self => { "href" => "http://test.host/testers/1" },
+                :index => { "href" => "http://test.host/testers" }
+              } 
+            }, 
+            { 
+              :name => "Tester 2", 
+              :id => 2, 
+              :links => { 
+                :self => {  "href" => "http://test.host/testers/2" },
+                :index => { "href" => "http://test.host/testers" }
+              }
+            },
+          ],
          :pagination => {
            :total_items => 3, 
            :max_page_size => 2,
@@ -210,7 +258,7 @@ describe TestersController do
        }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "2"}).and_return('http://test.host/testers/2')
-        @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+        @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
         request.stub!(:path).and_return('/testers')
         tester1 = mock_model(Tester)
         tester2 = mock_model(Tester)
@@ -229,7 +277,8 @@ describe TestersController do
               { 
                 :name => "Tester 3", :id => 3, 
                 :links => {
-                    :self => { :href => 'http://test.host/testers/3' }
+                    :self => { :href => 'http://test.host/testers/3' },
+                    :index => { :href => 'http://test.host/testers'}
                   }
               } 
             ], 
@@ -247,7 +296,7 @@ describe TestersController do
             }
            }
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "3"}).and_return('http://test.host/testers/3')
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+          @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           request.stub!(:path).and_return('/testers')
           Tester.stub_chain(:where, :count).and_return(3)
           tester3 = mock_model(Tester)
@@ -273,11 +322,18 @@ describe TestersController do
       it "returns proper json when tester with that id exists" do
         expected = { :name => "Tester 1", "id" => 1 }
         @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+        @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
         tester = mock_model(Tester)
         tester.should_receive(:attributes).and_return(expected)
         tester.should_receive(:testers).and_return(nil)
         Tester.stub_chain(:where, :find).and_return(tester)
         get :show, :id => 1, :format => :json
+        expected.merge!(
+          "links" => {
+            "self" => { "href" => 'http://test.host/testers/1' },
+            "index" => { "href" => 'http://test.host/testers'}
+          }
+        )
         response_should_be(expected, 200)    
       end      
     end # context "When one tester exists"
@@ -302,10 +358,17 @@ describe TestersController do
           tester.should_receive(:attributes).twice.and_return(attributes)
           tester.should_receive(:testers).and_return(nil)
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+          @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           Tester.stub_chain(:where, :find).and_return(tester)
           tester.should_receive(:update_attributes).with(attributes).and_return(true)
           put_json(:update, 1, attributes)
-          response_should_be(attributes.merge!( "links" => { "self" => { "href" => "http://test.host/testers/1" } } ), 200)
+          attributes.merge!( 
+            "links" => { 
+              "self" => { "href" => "http://test.host/testers/1" },
+              "index" => { "href" => 'http://test.host/testers'}
+            } 
+          )
+          response_should_be(attributes, 200)
         end
       end
       
@@ -316,10 +379,12 @@ describe TestersController do
           tester.should_receive(:attributes).twice.and_return({ "name" => "New Name", "id" => 1})
           tester.should_receive(:testers).and_return(nil)
           @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+          @controller.should_receive(:url_for).at_least(:once).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           Tester.stub_chain(:where, :find).and_return(tester)
           tester.should_receive(:update_attributes).with({"name" => "New Name", "id" => 1}).and_return(true)
           put_json(:update, 1, attributes)
-          response_should_be({"name" => "New Name", "id" => 1, "links" => { :self => { "href" => "http://test.host/testers/1" }} }, 200)
+
+          response_should_be({"name" => "New Name", "id" => 1, "links" => { :self => { "href" => "http://test.host/testers/1" }, "index" => { "href" => 'http://test.host/testers'}} }, 200)
 	      end
       end
       
@@ -397,13 +462,14 @@ describe TestersController do
       context "and in the representation all attributes are shown except one" do
         it "returns the representation with all attributes except that one" do
           expected = { "id" => 1 }
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/tester/1')
+          #@controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+          #@controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           tester = mock_model(Tester)
           tester.should_receive(:attributes).and_return(expected.merge("name" => "Tester 1"))
           tester.should_receive(:testers).and_return(nil)
           Tester.stub_chain(:where, :find).and_return(tester)
           get :show, :id => 1, :format => :json
-          response_should_be(expected.merge("links" => {"self" => { "href" => 'http://test.host/tester/1' }}), 200)
+          response_should_be(expected.merge("links" => {"self" => { "href" => 'http://test.host/testers/1' }, "index" => { "href" => "http://test.host/testers"}}), 200)
         end    
       end
     
@@ -415,14 +481,15 @@ describe TestersController do
     
       context "and in the representation none of the attributes are shown except one" do
         it "returns the representation with none of the attributes except that one" do
-          expected = { "name" => "Tester 1", "links" => { "self" => { "href" => 'http://test.host/tester/1' }} }
-          @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/tester/1')
+          expected = { "name" => "Tester 1" }
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           tester = mock_model(Tester)
           tester.should_receive(:attributes).and_return({ "id" => 1 }.merge(expected))
           tester.should_receive(:testers).and_return(nil)
           Tester.stub_chain(:where, :find).and_return(tester)
           get :show, :id => 1, :format => :json
-          response_should_be(expected, 200)
+          response_should_be(expected.merge("links" => {"self" => { "href" => 'http://test.host/testers/1' }, "index" => { "href" => "http://test.host/testers"}}), 200)
         end
       end
     end
