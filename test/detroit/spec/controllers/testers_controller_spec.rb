@@ -461,15 +461,22 @@ describe TestersController do
     context "#show" do
       context "and in the representation all attributes are shown except one" do
         it "returns the representation with all attributes except that one" do
-          expected = { "id" => 1 }
-          #@controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
-          #@controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
+          attributes = { "id" => 1, "name" => "Tester 1" }
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "show", :id => "1"}).and_return('http://test.host/testers/1')
+          @controller.should_receive(:url_for).with({:controller => "testers", :action => "index"}).and_return('http://test.host/testers')
           tester = mock_model(Tester)
-          tester.should_receive(:attributes).and_return(expected.merge("name" => "Tester 1"))
+          tester.should_receive(:attributes).and_return(attributes)
           tester.should_receive(:testers).and_return(nil)
           Tester.stub_chain(:where, :find).and_return(tester)
           get :show, :id => 1, :format => :json
-          response_should_be(expected.merge("links" => {"self" => { "href" => 'http://test.host/testers/1' }, "index" => { "href" => "http://test.host/testers"}}), 200)
+          expected = {
+             "name" => "Tester 1",
+             "links" => {
+              "self" => { "href" => 'http://test.host/testers/1' }, 
+              "index" => { "href" => 'http://test.host/testers' }
+            }
+          }
+          response_should_be(expected, 200)
         end    
       end
     
