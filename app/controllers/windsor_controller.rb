@@ -3,7 +3,7 @@ class WindsorController < ApplicationController
   rescue_from JSON::ParserError, :with => :unsupported_media_type
   
   before_filter :get_resource, :except => [:index, :create]
-  before_filter :scope, :set_attributes, :check_implemented
+  before_filter :view_scope, :create_scope, :set_attributes, :check_implemented
 
   attr_accessor :exceptional_attributes
   attr_accessor :attributes_all_or_none
@@ -17,9 +17,9 @@ class WindsorController < ApplicationController
       current_page_index = params[:page].to_i - 1
       offset = @max_page_size * current_page_index  
     end
-    final_scope = scope.merge(request.query_parameters)
-    items = model_class.where(final_scope).limit(@max_page_size).offset(offset).to_a
-    total_items = model_class.where(final_scope).count
+    scope = view_scope.merge(request.query_parameters)
+    items = model_class.where(scope).limit(@max_page_size).offset(offset).to_a
+    total_items = model_class.where(scope).count
 
     object = { 
       get_controller_name => items, 
@@ -33,7 +33,7 @@ class WindsorController < ApplicationController
     existing_attributes = enabled_attributes(hashity_hash(model_class.new)).map { |item| item.to_s }
     request_body = prune_extra_attributes(request_body, existing_attributes)
     
-    model_object = model_class.new(request_body.merge(scope))
+    model_object = model_class.new(request_body.merge(create_scope))
     if model_object.save
       headers["Location"] = get_self_link({"id" => model_object.id})
       render_json model_object, :created
@@ -185,6 +185,14 @@ class WindsorController < ApplicationController
       return pagination
   end
 
+  def view_scope
+    {}
+  end
+
+  def create_scope
+    {}
+  end
+
   private
   
     def request_uri
@@ -210,7 +218,7 @@ class WindsorController < ApplicationController
     end
   
     def get_resource
-      @model_object = model_class.where(scope).find(params[:id])
+      @model_object = model_class.where(view_scope).find(params[:id])
     end
 
     def check_implemented
@@ -218,10 +226,6 @@ class WindsorController < ApplicationController
       unless enabled_actions.include?(params[:action].to_sym)
         render_error(405, "MethodNotImplemented", "Method not implemented.", request.method.to_s.upcase)
       end
-    end
-    
-    def scope
-      {}
     end
     
     def add_link(object, href, rel)
